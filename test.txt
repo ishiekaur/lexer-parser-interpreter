@@ -1,1 +1,6 @@
-xyz = 33 zz12=99+88+xyz
+xyz = 33 
+zz12=99+88+xyz
+   x32   =
+83   rt=2
+ii = xyz + rt + 
+x32 + 4
