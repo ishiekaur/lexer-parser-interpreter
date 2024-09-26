@@ -3,26 +3,26 @@ import java.util.ArrayList;
 public class Parser {
 
     public ArrayList<Token> tokens; // A list of tokens (assumed to be strings for simplicity)
-    public idTable idTable;  // The IdTable instance
-    public int currentToken; // Keeps track of which token the Parser is on
-    public int lineNumber; // Keeps track of which line the parser is on.
-    public boolean isValid;
-    public int address;
+    public IdTable table;  // The IdTable instance
+    public int currentTokenIndex; // Keeps track of which token the Parser is on
+    private int lineNumber; // Keeps track of which line the parser is on.
+    private boolean isValid;
+    private int address;
     
     public Parser(Lexer lexer) {
         // Initialize the parser with tokens from the Lexer
         this.tokens = lexer.getAllTokens();
-        this.idTable = new idTable();
+        this.table = new IdTable();
         // this.currentToken = 0;
         this.lineNumber = 1;
         this.isValid = true;
-        this.address = 0;
+        // this.address = 0;
     }
 
     // Main method to parse the entire program
     public void parseProgram() {
         // A statement that says, while this condition, parse through the program
-        while (currentToken < tokens.size() && isValid) {
+        while (currentTokenIndex < tokens.size() && isValid) {
             parseAssignment();
         }
     }
@@ -37,16 +37,13 @@ public class Parser {
     // Method to parse an identifier
     public void parseId() {
         Token id = nextToken();
-        if (!isValid) {
-            return;
-        }
-        
-        if (id.type.equals(Lexer.IDTOKEN) && idTable.getAddress(id.getValue()) == -1) {
+        if (id.type.equals(Lexer.IDTOKEN) && table.getAddress(id.getValue()) == -1) {
             isValid = true;
             // Add the identifier to the IdTable
-            idTable.add(id.getValue(), address);
-            address++;
-        } else {
+            table.add(id.getValue(), this.address);
+            this.address++;
+        }
+        else {
             System.out.println("Expecting Identifier at Line " + id.getLineNumber());
             isValid = false;
             return;
@@ -56,9 +53,6 @@ public class Parser {
     // Method to parse an AssignOp
     public void parseAssignOp() {
         Token assignOp = nextToken();
-        if (!isValid) {
-            return;
-        }
         if (assignOp.type.equals(Lexer.ASSMTTOKEN)) {
             isValid = true;
         } else {
@@ -71,15 +65,8 @@ public class Parser {
     // Method to parse an expression
     public void parseExpression() {
         Token expression = nextToken();
-        if (!isValid) {
-            return;
-        }
-        if (expression.type.equals(Lexer.EOFTOKEN)) {
-            return;
-        }
-
-        // Check if the expression contains an IDTOKEN that is already in the IdTable or an INTTOKEN
-        if ((expression.type.equals(Lexer.IDTOKEN) && idTable.getAddress(expression.getValue()) != -1) 
+        // If the expression contains an IDTOKEN that is already in the IdTable or an INTTOKEN, T
+        if ((expression.type.equals(Lexer.IDTOKEN) && table.getAddress(expression.getValue()) != -1) 
             || expression.type.equals(Lexer.INTTOKEN)) {
             isValid = true;
         } else {
@@ -89,7 +76,7 @@ public class Parser {
         }
 
         // Handle additional expressions (e.g., after a PLUS token)
-        while (currentToken < tokens.size()) {
+        while (currentTokenIndex < tokens.size()) {
             Token next = nextToken();
             if (next.type.equals(Lexer.PLUSTOKEN)) {
                 isValid = true;
@@ -97,12 +84,13 @@ public class Parser {
                 System.out.println("End of file reached in expression.");
                 return;
             } else {
-                currentToken--;
+                currentTokenIndex--;
                 return;
             }
+
             // After a PLUS, we expect another identifier or integer
             Token nextT = nextToken();
-            if ((nextT.type.equals(Lexer.IDTOKEN) && idTable.getAddress(nextT.getValue()) != -1)|| nextT.type.equals(Lexer.INTTOKEN)) {
+            if ((nextT.type.equals(Lexer.IDTOKEN) && table.getAddress(nextT.getValue()) != -1)|| nextT.type.equals(Lexer.INTTOKEN)) {
                 isValid = true;
             } else {
                 System.out.println("Expecting Identifier or Integer at Line " + expression.getLineNumber());
@@ -114,8 +102,8 @@ public class Parser {
 
     // Method to get the next token and increment the index
     public Token nextToken() {
-        if (currentToken < tokens.size()) {
-            return tokens.get(currentToken++);
+        if (currentTokenIndex < tokens.size()) {
+            return tokens.get(currentTokenIndex++);
         } else {
             return null;
         }
@@ -141,7 +129,7 @@ public class Parser {
         }
 
         System.out.println("\nID Table:");
-        System.out.println(parser.idTable.toString());
+        System.out.println(parser.table.toString());
 
         // Check if the program is valid
         if (parser.isValid) {
